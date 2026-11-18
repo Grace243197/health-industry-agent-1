@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir *)",
+      "Bash(python *)",
+      "Bash(rmdir *)",
+      "Bash(del *)",
+      "Bash($content *)",
+      "Bash($chars)",
+      "Bash(.length)",
+      "Bash(write-host *)",
+      "Bash($allchars *)",
+      "Bash($lines)",
+      "Bash(.count)",
+      "WebFetch(www.who.int)"
+    ]
+  },
+  "$version": 4
+}

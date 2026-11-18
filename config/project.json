@@ -1,0 +1,72 @@
+{
+  "domain": "成人睡眠健康",
+  "theme": "睡眠监测",
+  "region": "中国大陆",
+  "cutoff_date": "2026-11-17",
+  "scenario": "一家医疗健康机构希望了解开展成人睡眠监测服务所需的条件",
+  "topics": {
+    "RD": {
+      "name": "研究与开发",
+      "questions": [
+        "睡眠监测的主要技术路线（PSG、HSAT、消费级可穿戴）及各自的代表产品与技术参数是什么？",
+        "PPG、加速度、呼吸、血氧等传感器与判读算法在准确性上的性能边界和已知局限是什么？",
+        "这些设备与算法的性能验证有哪些公开证据（样本人群、对照设备、验证场景）？从实验室推广到居家与临床的泛化差距有多大？"
+      ]
+    },
+    "CL": {
+      "name": "临床诊疗与服务",
+      "questions": [
+        "睡眠门诊中 PSG、HSAT 与可穿戴设备分别在什么情境下使用，标准检查流程是怎样的？",
+        "睡眠监测结果的临床解读与随访需要哪些专业角色协作（医师、技师、护理、心理）？",
+        "不同监测手段的适用人群与限制分别是什么（如合并症患者、老年人、特殊职业人群）？"
+      ]
+    },
+    "AD": {
+      "name": "管理与运营",
+      "questions": [
+        "开展睡眠监测服务需要哪些人员资质、设备配置与场地条件？",
+        "质量管理与合规要求包括什么（机构与人员资质、数据存储与传输安全、患者隐私保护）？",
+        "睡眠监测服务的流程与付费/报销路径如何（自费项目、医保覆盖范围、商业保险）？"
+      ]
+    },
+    "PC": {
+      "name": "公共传播与健康沟通",
+      "questions": [
+        "面向公众的睡眠监测科普应覆盖哪些关键点（适应人群、结果如何解释、何时需要就医）？",
+        "常见夸大或遗漏有哪些（如消费级可穿戴的医学边界、筛查与诊断的区别）？",
+        "对证据不足或表述不准确的宣传，应如何标注证据等级、发布更正并追溯来源？"
+      ]
+    }
+  },
+  "paths": {
+    "knowledge_base": "knowledge_base",
+    "output": "output",
+    "runs": "runs",
+    "inbox": "inbox"
+  },
+  "web_enabled": true,
+  "limits": {
+    "max_sources_per_run": 30,
+    "max_web_searches": 20,
+    "max_web_fetches": 10,
+    "supplement_rounds": 2,
+    "max_retries": 2,
+    "timeout_seconds": 1800,
+    "max_steps_per_agent": 30,
+    "max_tool_calls": 200,
+    "fetch_timeout_seconds": 30,
+    "max_fetches": 15
+  },
+  "source_plan_path": "tools/source_plan.json",
+  "model": {
+    "provider": "dashscope",
+    "model": "qwen3.7-plus",
+    "api_key_env": "BAILIAN_TOKEN_PLAN_API_KEY",
+    "temperature": 0.2
+  },
+  "report": {
+    "language": "zh-CN",
+    "include_job_analysis": true,
+    "include_cross_direction_synthesis": true
+  }
+}

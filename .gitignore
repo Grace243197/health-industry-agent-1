@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 运行产物与打包（可由 tools/ 重新生成）
+runs/
+output/
+dist/
+
+# 本地资料与抓取数据（含会议纪要、第三方网页原文，不进入公开仓库）
+# 如需提交到私有仓库：git add -f inbox/ knowledge_base/
+inbox/
+knowledge_base/
+
+# 环境变量与本地凭据
+.env
+.env.*
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
