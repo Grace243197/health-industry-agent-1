@@ -2,6 +2,8 @@
 
 > **V2 修复版（2026-11-17）**：完成资料真实性修复、去重、真实采集工具、证据核验、知识库更新和报告生成。self_check.py 全 PASS。详见 `docs/v2-gap-report.md` 和 `docs/v1-changelog.md`。
 >
+> **V3（2026-11-23）**：打通 PDF 入库 —— `tools/ingest.py` 新增 `ingest_pdfs()`，`inbox/pdfs/` 下的论文/手册现在会真正进入知识库（此前只定义、从未调用）；扫描件自动拒收并记入 `failed`。另加 `tools/probe_search.py` 验证千问联网返回结构，并改用 `.venv` 隔离环境。详见 `docs/v3-env-and-pdf-20261123.md`。
+>
 > **V1 骨架**：搭好流程与目录，支持本地材料 + 联网调研。可通过 `config/project.json` 的 `web_enabled` 控制是否联网。
 
 ## 用途
@@ -21,12 +23,12 @@
 1. 准备环境
    - Python 3.10+
    - 依赖：`pypdf`（PDF 文本提取）、标准库即可（冒烟阶段不引入向量检索）
-   - 安装：`pip install pypdf`（仅在需要解析 PDF 时）
+   - 建议用虚拟环境：`python -m venv .venv`，然后 `.venv\Scripts\python.exe -m pip install -r requirements.txt`
 2. 填写配置
    - 编辑 `config/project.json`，把 `TODO` 字段按你的项目决定填入（区域、截止日期、模型等）
    - 详细说明见 `config/README.md`
 3. 导入资料
-   - 把会议纪要、PDF、网页快照等放进 `inbox/notes/`、`inbox/pdfs/` 等
+   - 把会议纪要放进 `inbox/notes/`，PDF 放进 `inbox/pdfs/`（`tools/ingest.py` 会自动抽文本；扫描件会被拒收并记入 `failed`）
    - 在 `inbox/links.md` 里登记 URL
    - 联网开关：`config/project.json` 的 `web_enabled`（默认 `false`，设为 `true` 后 source-collector 可联网抓取）
 4. 启动任务
@@ -87,6 +89,8 @@
 | `tools/kb_updater.py` | 幂等更新：归档旧版→删旧核验段→写新核验状态表格 |
 | `tools/update_cards.py` | 批量更新整理卡，消除 TODO，填入摘要/关键观点/支持片段/核验状态 |
 | `tools/supplement_collector.py` | 补充收集：分析缺口 + `--fetch` 调用 fetch_sources |
+| `tools/ingest.py` | 入库：`inbox/notes/*.md` + **`inbox/pdfs/*.pdf`**（V3 起，pypdf 抽文本、扫描件拒收） |
+| `tools/probe_search.py` | 探针：验证千问 `enable_search` 在两条协议下的真实返回结构（需 `DASHSCOPE_API_KEY`） |
 
 ### 搜索替代方案
 1. 首选：固定 URL 清单 + `fetch_sources.py` 直链抓取

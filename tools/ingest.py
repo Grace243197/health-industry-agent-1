@@ -93,7 +93,10 @@ def extract_md_text(path: Path) -> str:
 
 
 def extract_pdf_text(path: Path) -> str:
-    """用 pypdf 提取 PDF 文本；失败返回空字符串。"""
+    """用 pypdf 提取 PDF 文本；每页前加 `<!-- page N -->` 便于引用定位。
+
+    失败返回带方括号的标记串，由调用方识别后记入 failed，**不得当作正文入库**。
+    """
     try:
         from pypdf import PdfReader
     except ImportError:
@@ -163,6 +166,7 @@ TODO：由 source-collector 在后续步骤填写。
 
 -
 """
+    card_path.parent.mkdir(parents=True, exist_ok=True)   # 全新克隆时 cards/ 可能还不存在
     card_path.write_text(card, encoding="utf-8")
 
 
@@ -231,6 +235,98 @@ def ingest_notes(run_id: str) -> list[dict]:
     return added
 
 
+def ingest_pdfs(run_id: str) -> tuple[list[dict], list[dict]]:
+    """处理 inbox/pdfs/ 下所有 .pdf。返回 (新增记录, 失败记录)。
+
+    与 ingest_notes 的区别只在文本来源：这里先过 pypdf 抽文字。
+    抽不出文字（扫描件、加密、损坏）的一律记入 failed，**绝不入库** ——
+    否则 registry 里会出现一个"有文件、没内容"的来源，后面还会被当成证据引用。
+
+    证据等级沿用 ingest_notes_v2 的判定（默认 C，指南/标准 B），并统一追加
+    "待人工核定"：自动入库的 PDF 不能自己给自己定级。
+    """
+    pdfs_dir = INBOX / "pdfs"
+    if not pdfs_dir.exists():
+        return [], []
+
+    from ingest_notes_v2 import guess_meta_from_filename
+
+    added: list[dict] = []
+    failed: list[dict] = []
+    existing = existing_dedup_keys()
+
+    for pdf in sorted(pdfs_dir.rglob("*.pdf")):
+        rel = str(pdf.relative_to(ROOT))
+        text = extract_pdf_text(pdf)
+
+        # 标记串代表抽取失败，不能当正文
+        if text.startswith("[pypdf 未安装") or text.startswith("[PDF 提取失败"):
+            failed.append({"path": rel, "reason": text.strip("[]")})
+            continue
+
+        body = re.sub(r"<!-- page \d+ -->", "", text).strip()
+        pages = len(re.findall(r"<!-- page \d+ -->", text)) or 1
+        per_page = len(body) / pages
+        # 扫描件/图片排版只能抽出零星文字。总量阈值抓 1-2 页的短文档，
+        # 每页密度阈值抓"页数多但只有封面有字"的手册类 PDF。
+        if len(body) < 200 or (pages >= 3 and per_page < 80):
+            failed.append({
+                "path": rel,
+                "reason": "PDF 共 {0} 页，只抽出 {1} 个字符（平均 {2:.0f}/页），"
+                          "疑似扫描件或图片排版，需先 OCR".format(pages, len(body), per_page),
+            })
+            continue
+
+        meta = guess_meta_from_filename(pdf.name)
+        meta.update(guess_meta_from_md(body, pdf.name))
+        # 论文 PDF 的文件名常是 "2023.05.30.23290376v1.full" 这种无信息串，
+        # 此时用正文首行当标题；中文名（如"枕垫产品手册"）本身更好，保持不动。
+        if not re.search(r"[\u4e00-\u9fff]", pdf.stem) and len(re.findall(r"\d", pdf.stem)) >= 4:
+            first_line = next((ln.strip() for ln in body.splitlines() if ln.strip()), "")
+            if 4 <= len(first_line) <= 120 and re.search(r"[A-Za-z\u4e00-\u9fff]", first_line):
+                meta["title"] = first_line
+        notes = (meta.get("notes") or "").strip()
+        meta["notes"] = (notes + "；" if notes else "") + "PDF 自动入库，证据等级待人工核定"
+        meta["url_or_path"] = rel
+
+        dk = dedup_key(meta["title"], meta["publish_date"], meta["url_or_path"])
+        if dk in existing:
+            continue
+
+        sid = next_sid()
+        existing.add(dk)
+        dest_dir = SOURCES / sid
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(pdf, dest_dir / "raw.pdf")
+        (dest_dir / "extracted.md").write_text(text, encoding="utf-8")
+        write_card(sid, meta, CARDS / f"{sid}.md")
+
+        rec = {
+            "source_id": sid,
+            "title": meta["title"],
+            "type": meta.get("type", "other"),
+            "publisher": meta.get("publisher", "unknown"),
+            "publish_date": meta["publish_date"],
+            "ingest_date": date.today().isoformat(),
+            "url_or_path": meta["url_or_path"],
+            "domain": "成人睡眠健康",
+            "theme": "睡眠监测",
+            "topics": meta.get("topics", []),
+            "access": meta.get("access", "public"),
+            "evidence_level": meta.get("evidence_level", "C"),
+            "notes": meta["notes"],
+            "raw_path": f"knowledge_base/sources/{sid}/raw.pdf",
+            "extracted_path": f"knowledge_base/sources/{sid}/extracted.md",
+            "card_path": f"knowledge_base/cards/{sid}.md",
+            "dedup_key": dk,
+        }
+        with REGISTRY.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        added.append(rec)
+
+    return added, failed
+
+
 def write_collection(run_id: str, added: list[dict], failed: list[dict]) -> Path:
     runs_dir = ROOT / "runs" / run_id
     runs_dir.mkdir(parents=True, exist_ok=True)
@@ -254,8 +350,11 @@ def main() -> int:
     args = ap.parse_args()
 
     added = ingest_notes(args.run_id)
-    out_path = write_collection(args.run_id, added, [])
-    print(f"ingest: added {len(added)} sources; wrote {out_path}")
+    pdf_added, pdf_failed = ingest_pdfs(args.run_id)
+    added.extend(pdf_added)
+    out_path = write_collection(args.run_id, added, pdf_failed)
+    print(f"ingest: added {len(added)} sources "
+          f"({len(pdf_added)} from PDF, {len(pdf_failed)} PDF failed); wrote {out_path}")
     return 0
 
 

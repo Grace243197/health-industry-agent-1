@@ -7,15 +7,21 @@
 ## 1. 环境要求
 
 - Python 3.10 及以上
-- 依赖：`pypdf`（只有解析 PDF 时需要；当前知识库以 HTML/文本为主）
-- 安装：
+- 依赖：`pypdf`（`tools/ingest.py` 解析 `inbox/pdfs/` 下的论文与手册时需要；HTML/文本来源不需要）
+- 建议用虚拟环境，避免污染全局 Python：
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt   # Windows
+# source .venv/bin/activate && pip install -r requirements.txt  # macOS / Linux
 ```
+
+之后所有命令把 `python` 换成 `.venv\Scripts\python.exe`（或先激活虚拟环境）。
+`.venv/` 已在 `.gitignore` 中，不会被提交。
 
 - 不需要联网即可运行 `self_check.py`、`kb_search.py`、`evidence_verifier_v2.py`、`kb_updater.py`。
 - 不需要 API Key 即可做本地检索、核验和自检；`config/project.json` 里的 `api_key_env` 只是模型配置说明，不写密钥。
+- `tools/probe_search.py` 用来验证千问联网能力，需要 `DASHSCOPE_API_KEY`；不配密钥时只打印提示，不发请求。
 
 ## 2. 解压后先验证
 
@@ -98,8 +104,10 @@ python tools/self_check.py --run-id <run_id>
 
 ## 7. 已知限制
 
+- 扫描件/图片排版 PDF 需要先 OCR：`tools/ingest.py` 只能抽文本层，抽不出时会记入 `01_collection.json` 的 `failed`，不会假装入库。
+- PDF 自动入库的证据等级默认 `C`，并标注"待人工核定"；确认是同行评审论文后再由人工升级。
 - 191 条核验判断中，102 条来自 4 个岗位页且没有 `source_id`，判为 `unverifiable`；原因是未找到中国大陆真实招聘样本。
-- 来源以 Wikipedia 为主（27 份），另有 2 份会议纪要、2 份指南（NHS、WHO）、1 份机构资料（ResMed）；无论文和真实招聘。
+- 来源以 Wikipedia 为主（27 份），另有 2 份会议纪要、2 份指南（NHS、WHO）、1 份机构资料（ResMed）；论文入库通道已于 `v3-pdf-ingest` 打通，但历史运行未重跑。
 - S033–S042 已入库并部分进入报告，但尚未深度整合进各方向主题页。
 - `kb_search.py` 目前是精确关键词子串匹配，多词查询需要拆开搜。
 
