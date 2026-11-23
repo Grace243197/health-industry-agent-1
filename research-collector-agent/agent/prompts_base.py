@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTO-GENERATED from shared-core/prompts_base.py by tools/sync_core.py — DO NOT EDIT
-# CORE_VERSION: 20261123.1
+# CORE_VERSION: 20261123.2
 """
 prompts_base.py · 公共规则底座（由 shared-core 同步生成，请勿手改）
 

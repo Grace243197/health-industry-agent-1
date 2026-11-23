@@ -33,4 +33,8 @@ verify-agent/sources/
 verify-agent/claims/
 verify-agent/verifications/
 verify-agent/traces/
+generator-agent/reports/
+generator-agent/traces/
+dispatcher-agent/audit/
+dispatcher-agent/traces/
 *_precheck.log

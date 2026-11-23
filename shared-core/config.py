@@ -75,6 +75,11 @@ class Config(object):
         self.search_backend = get("SEARCH_BACKEND", "free").lower()
         self.search_timeout = int(get("SEARCH_TIMEOUT", "25"))
 
+        # 保留合并后的原始配置，供各 Agent 读取自己的专属路径项（如 KB_FROZEN_DIR）
+        self.settings = merged
+        # 上游/下游路径按"项目根"解析，而不是按本 Agent 目录
+        self.project_root = self.base_dir.parent
+
         dirs = getattr(agentrc, "DIRS", {})
         self.workspace = self.base_dir / dirs.get("workspace", "workspace")
         self.trace_dir = self.base_dir / dirs.get("trace_dir", "traces")
@@ -84,6 +89,12 @@ class Config(object):
         }
         for path in [self.workspace, self.trace_dir, *self.extra_dirs.values()]:
             path.mkdir(parents=True, exist_ok=True)
+
+    def project_path(self, key: str, default: str = "") -> Path:
+        """取一个相对项目根的路径（用于上游/下游目录，如 research-collector-agent/sources）。"""
+        value = str(self.settings.get(key) or default)
+        path = Path(value)
+        return path if path.is_absolute() else self.project_root / path
 
     # ------------------------------------------------------------ 展示
     @property

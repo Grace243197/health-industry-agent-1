@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTO-GENERATED from shared-core/model.py by tools/sync_core.py — DO NOT EDIT
-# CORE_VERSION: 20261123.1
+# CORE_VERSION: 20261123.2
 """
 model.py · 模型客户端（由 shared-core 同步生成，请勿手改）
 
