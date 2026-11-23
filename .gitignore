@@ -17,6 +17,7 @@ knowledge_base/
 # 环境变量与本地凭据
 .env
 .env.*
+!.env.example
 
 # 系统与编辑器
 .DS_Store
@@ -24,3 +25,12 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# 多 Agent 运行产物（可由 run_cli.py 重新生成）
+research-collector-agent/sources/
+research-collector-agent/traces/
+verify-agent/sources/
+verify-agent/claims/
+verify-agent/verifications/
+verify-agent/traces/
+*_precheck.log

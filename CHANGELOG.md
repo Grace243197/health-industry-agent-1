@@ -3,7 +3,7 @@
 > 本文件记录每一轮**实质改动**：改了什么、为什么改、怎么验证、怎么回滚。
 > 详细过程与实测输出在 `docs/` 下对应文档里，这里只留索引与结论。
 
-当前仓库版本：**v3.1-ask-report-ui**（2026-11-23）
+当前仓库版本：**v4-agents-collector-verify**（2026-11-23）
 
 ---
 
@@ -15,6 +15,50 @@
 | V2 修复版 | 2026-11-17 | 真实性修复、去重、真实采集、证据核验、知识库更新、报告生成 | `docs/v2-gap-report.md`、`docs/v1-changelog.md` |
 | V3 | 2026-11-23 | 打通 PDF 入库（此前抓下来的 PDF 从未进知识库）+ 环境隔离 + 联网探针 | `docs/v3-env-and-pdf-20261123.md` |
 | V3.1 | 2026-11-23 | 问一句 → 带 `[Sxxx]` 出处的答案 → 导出 PDF → 网页点按钮下载 | `docs/v3.1-ask-report-ui-20261123.md` |
+| V4 | 2026-11-23 | 多 Agent 运行时起步：公共内核 + 同步机制 + 采集 Agent + 校验 Agent | `docs/v4-agents-collector-verify-20261123.md` |
+
+---
+
+## V4（2026-11-23）逐项说明
+
+### 1. 改了什么
+
+| 路径 | 类型 | 内容 |
+|---|---|---|
+| `shared-core/` | 新增 | 唯一真源：`config / model / core / memory / toolkit / prompts_base` 六个文件 |
+| `tools/sync_core.py` | 新增 | 把内核分发到各 Agent 目录，`--check` 比对指纹（CORE_VERSION `20261123.1`） |
+| `research-collector-agent/` | 新增 | 采集 Agent：5 个工具，`free`/`qwen`/`both` 三个检索后端 |
+| `verify-agent/` | 新增 | 校验 Agent：4 个工具 + 规则预检 + 红队四例 |
+| `.gitignore` | 修改 | 忽略 `*/sources|traces|claims|verifications` 等运行产物 |
+| `README.md` | 修改 | V4 横幅与多 Agent 使用说明 |
+
+### 2. 为什么这么切
+
+- **一个内核 + 五份配置**：五个 Agent 的差别只有"提示词、工具集、产物格式、模型与步数"，没必要写五套循环。
+- **每个目录自包含**：任务书要求能进目录跑 `run_cli.py`，老师要看"部署隔离"，所以内核是生成进去的副本，靠 `sync_core.py` 防漂移。
+- **先做采集 + 校验**：这是"≥2 个 Agent 互相检查"的最小可验证闭环，且不依赖知识库/调度先完工。
+
+### 3. 怎么验证
+
+```bash
+python tools/sync_core.py --check                          # 两个 Agent 内核指纹一致
+cd research-collector-agent && python run_cli.py --check   # 5 个工具，[OK]
+cd verify-agent && python run_cli.py --check               # 4 个工具，[OK]
+python run_cli.py --precheck                               # 16 条 W2 断言出初判
+python -m unittest discover -s tests                       # 红队四例 + 内核冒烟
+```
+
+实测：采集 `free` 后端真实命中 PubMed（4.92 秒）；红队四例 4/4 符合预期；测试 5 + 8 全过。
+
+### 4. 边界（不许含糊）
+
+- `qwen` 检索后端**未实测**（无密钥），`search_info` 的真实层级仍未确认；
+- 采集**没有**自动拆子问题（GPT Researcher 的 planner 属下一轮）；
+- 校验的最终 verdict **没有**跑过真实模型，现有的是规则预检 + 红队；
+- 知识库 / 生成 / 调度三个 Agent 未开工；
+- 尚未接入 `ask_report`，问答页仍走 V3.1 自己那条链路。
+
+详见 `docs/v4-agents-collector-verify-20261123.md`。
 
 ---
 
