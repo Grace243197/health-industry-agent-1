@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTO-GENERATED from shared-core/toolkit.py by tools/sync_core.py — DO NOT EDIT
-# CORE_VERSION: 20261123.2
+# CORE_VERSION: 20261123.5
 """
 toolkit.py · 工具基础设施（由 shared-core 同步生成，请勿手改）
 

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 sync_core.py · 把 shared-core 同步到各 Agent 目录
 
@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "shared-core"
-CORE_VERSION = "20261123.2"
+CORE_VERSION = "20261123.5"
 
 # shared-core 里哪些文件要分发；不在列表里的（如 README）只留模板
 GENERATED = [

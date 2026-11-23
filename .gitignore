@@ -38,3 +38,7 @@ generator-agent/traces/
 dispatcher-agent/audit/
 dispatcher-agent/traces/
 *_precheck.log
+_*.log
+*_test.log
+*_run.log
+*_check.log

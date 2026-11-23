@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTO-GENERATED from shared-core/core.py by tools/sync_core.py — DO NOT EDIT
-# CORE_VERSION: 20261123.2
+# CORE_VERSION: 20261123.5
 """
 core.py · ReAct 主循环（由 shared-core 同步生成，请勿手改）
 
@@ -127,6 +127,18 @@ class Agent(object):
                                         "arguments": arguments, "result": output[:300]}, verbose)
 
                 result.steps.append(record)
+
+                # 可选扩展点：调度 Agent 用它实现"校验驳回后自动回退一次"。
+                # 返回 True 表示 hook 已往会话里追加了新指令，应继续循环而不是结束。
+                from . import agentrc
+                hook = getattr(agentrc, "after_tools", None)
+                if hook is not None:
+                    try:
+                        if hook(self, result, session):
+                            self._emit("rollback", {"step": step}, verbose)
+                            continue
+                    except Exception as exc:                   # noqa: BLE001
+                        self._emit("rollback_error", {"error": str(exc)}, verbose)
             else:
                 result.status = "max_steps"
                 result.answer = "未在 {0} 步内完成，已中止。工具序列：{1}".format(

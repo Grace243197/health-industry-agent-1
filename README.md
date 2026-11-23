@@ -1,5 +1,7 @@
 # general-domain-research-multi-agent-tool（睡眠健康 · 睡眠监测）
 
+> **V5（2026-11-23）**：补上「生成 + 调度」——`generator-agent/`（5 工具，双源强制、证据索引带 A/B/C）、`dispatcher-agent/`（7 工具，subprocess 隔离、审计日志、校验驳回自动回退一次）。四个 Agent 共 32 个单测全过；调度已能真实调用采集并落审计。知识库 Agent 尚未实现，`run_knowledge` 会如实报「入口不存在」。详见 `docs/v5-generator-dispatcher-20261123.md`。
+>
 > **V4（2026-11-23）**：多 Agent 运行时起步 —— `shared-core/` 公共内核 + `tools/sync_core.py` 同步机制 + `research-collector-agent/`（采集，5 工具，free/qwen 双后端）+ `verify-agent/`（校验，4 工具 + 规则预检 + 红队四例）。两者自检与测试均离线通过；`qwen` 后端与模型判定因无密钥**未实测**。详见 `docs/v4-agents-collector-verify-20261123.md`。
 >
 > **V2 修复版（2026-11-17）**：完成资料真实性修复、去重、真实采集工具、证据核验、知识库更新和报告生成。self_check.py 全 PASS。详见 `docs/v2-gap-report.md` 和 `docs/v1-changelog.md`。
@@ -75,19 +77,25 @@
 - 来源登记：`knowledge_base/registry.jsonl`
 - 每次运行记录：`runs/<run_id>/`
 
-## 多 Agent 运行时（V4，进行中）
+## 多 Agent 运行时（V5，进行中）
 
 | Agent | 目录 | 工具数 | 状态 |
 |---|---|---|---|
-| 采集 | `research-collector-agent/` | 5 | 离线自检通过；`free` 后端已真实命中 PubMed |
-| 校验 | `verify-agent/` | 4 | 离线自检通过；规则预检 + 红队四例 4/4 |
-| 知识库 / 生成 / 调度 | — | — | 未开工 |
+| 采集 | `research-collector-agent/` | 5 | 自检通过；`free` 后端已真实命中 PubMed |
+| 校验 | `verify-agent/` | 4 | 自检通过；规则预检 + 红队四例 4/4 |
+| 生成 | `generator-agent/` | 5 | 自检通过；双源缺失时拒绝生成；证据索引带 A/B/C |
+| 调度 | `dispatcher-agent/` | 7 | 自检通过；真实调用采集成功并落审计；驳回自动回退一次 |
+| 知识库 | — | — | **未实现**，调度会如实报「入口不存在」 |
 
 公共内核在 `shared-core/`，改完执行 `python tools/sync_core.py`；`--check` 能发现副本被手改漂移。
 
 ```bash
+python tools/sync_core.py --check
 cd research-collector-agent && python run_cli.py --check
 cd verify-agent && python run_cli.py --check && python run_cli.py --precheck
+cd generator-agent && python run_cli.py --check
+cd dispatcher-agent && python run_cli.py --check
+cd dispatcher-agent && python run_cli.py --task "调研成人睡眠监测行业"
 ```
 
 每个 Agent 目录都是自包含的（有自己的 `agent/`、`.env.example`、`requirements.txt`、`run_cli.py`），可以单独拷走运行。

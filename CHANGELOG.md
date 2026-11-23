@@ -3,7 +3,7 @@
 > 本文件记录每一轮**实质改动**：改了什么、为什么改、怎么验证、怎么回滚。
 > 详细过程与实测输出在 `docs/` 下对应文档里，这里只留索引与结论。
 
-当前仓库版本：**v4-agents-collector-verify**（2026-11-23）
+当前仓库版本：**v5-generator-dispatcher**（2026-11-23）
 
 ---
 
@@ -16,6 +16,57 @@
 | V3 | 2026-11-23 | 打通 PDF 入库（此前抓下来的 PDF 从未进知识库）+ 环境隔离 + 联网探针 | `docs/v3-env-and-pdf-20261123.md` |
 | V3.1 | 2026-11-23 | 问一句 → 带 `[Sxxx]` 出处的答案 → 导出 PDF → 网页点按钮下载 | `docs/v3.1-ask-report-ui-20261123.md` |
 | V4 | 2026-11-23 | 多 Agent 运行时起步：公共内核 + 同步机制 + 采集 Agent + 校验 Agent | `docs/v4-agents-collector-verify-20261123.md` |
+| V5 | 2026-11-23 | 生成 Agent（双源强制 + 证据索引）+ 调度 Agent（subprocess 隔离 + 审计 + 回退一次） | `docs/v5-generator-dispatcher-20261123.md` |
+
+---
+
+## V5（2026-11-23）逐项说明
+
+### 1. 改了什么
+
+| 路径 | 类型 | 内容 |
+|---|---|---|
+| `generator-agent/` | 新增 | 5 工具；`preflight()` 双源强制；证据索引带 A/B/C |
+| `dispatcher-agent/` | 新增 | 7 工具；subprocess 调下游 + 超时/失败如实回报 + `audit/audit_log.jsonl` |
+| `shared-core/core.py` | 修改 | 新增 `after_tools` 扩展点，供调度实现"驳回回退一次" |
+| `shared-core/model.py` | 修改 | `$q` 清洗任务动词；新增 `$task` 透传原句 |
+| `shared-core/config.py` | 修改 | 增加 `settings` / `project_root` / `project_path` |
+| `tools/sync_core.py` | 修改 | 内核版本 `20261123.5`；修复被 PowerShell 改坏的文件 |
+| `docs/v5-...md`、`README.md`、`.gitignore` | 新增/修改 | 文档与运行产物忽略 |
+
+### 2. 为什么
+
+老师要求"生成 + 评判互相检查"。生成 Agent 与校验 Agent 配对后，才能构成真正的互检闭环；
+调度 Agent 是"用户只和一个入口对话"的落点，也是"部署隔离"的证明。
+
+### 3. 怎么验证
+
+```bash
+python tools/sync_core.py --check                         # 4 个 Agent 指纹一致 20261123.5
+cd generator-agent && python run_cli.py --check           # 5 工具；双源缺失时拒绝生成
+cd dispatcher-agent && python run_cli.py --check          # 7 工具；3 个下游存在，知识库缺失 WARN
+```
+
+实测：四个 Agent 单元测试 5+8+9+10=32 全过；调度真实调用采集成功（27.9 秒），
+审计落 1 行，下游返回 European PMC 的 OSAHS 监测文献。
+
+### 4. 本轮修掉的三个真 bug
+
+1. 生成 Agent 中文检索把整句当一个 token → 改为二元组切分，整句也能命中。
+2. 调度子进程 UTF-8/GBK 编码不一致 → "驳回"识别失败；改为注入 `PYTHONIOENCODING=utf-8`。
+3. `$q`（检索词）与 `$task`（原句）混用 → 下游拿不到动词不干活；拆成两个占位符。
+
+另有一次自伤事故：用 PowerShell `Set-Content` 改含中文的 `sync_core.py`，导致 UTF-8 被读成 ANSI、
+注释与代码粘连报 `IndentationError`；已整份重写，并记录"此机器不要用 PowerShell 改中文源文件"。
+
+### 5. 边界
+
+- **知识库 Agent 仍未实现**，`run_knowledge` 会如实返回"入口不存在"；
+- 全部只跑过离线假模型，真实生成质量与 verdict 未验证；
+- 完整四段链路（采集→知识库→生成→校验）尚未串通；
+- `ask_report` / 网页仍走 V3.1 自己的链路。
+
+详见 `docs/v5-generator-dispatcher-20261123.md`。
 
 ---
 

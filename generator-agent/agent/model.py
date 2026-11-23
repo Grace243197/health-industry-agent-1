@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTO-GENERATED from shared-core/model.py by tools/sync_core.py — DO NOT EDIT
-# CORE_VERSION: 20261123.2
+# CORE_VERSION: 20261123.5
 """
 model.py · 模型客户端（由 shared-core 同步生成，请勿手改）
 
@@ -89,8 +89,17 @@ class Model(object):
 
 
 # ============================================================ 离线假模型
+_TASK_VERBS = re.compile(
+    r"^(?:请|帮我|麻烦你?|给我)?\s*"
+    r"(?:搜索|搜一下|搜|检索|调研|查找|查一下|查|找一下|找|生成|写一份|写|校验|核对|复核|入库|预处理)"
+    r"\s*"
+)
+
+
 def _clean(text: str) -> str:
-    return re.sub(r"[？?。！!，,、\s]+", " ", text or "").strip()
+    """把「调研成人睡眠监测行业」这类任务句压成检索词「成人睡眠监测行业」。"""
+    text = _TASK_VERBS.sub("", text or "")
+    return re.sub(r"[？?。！!，,、\s]+", " ", text).strip()
 
 
 def _fill_arguments(arguments: dict, user_text: str) -> dict:
@@ -104,6 +113,10 @@ def _fill_arguments(arguments: dict, user_text: str) -> dict:
     for key, value in arguments.items():
         if value == "$q":
             filled[key] = _clean(user_text)[:40]
+        elif value == "$task":
+            # 原句透传给下游：下游要靠"调研/生成/校验"这些动词判断该做什么，
+            # 不能像检索词那样把动词剥掉。
+            filled[key] = (user_text or "").strip()[:200]
         elif value == "$url":
             filled[key] = url
         elif value == "$path":
