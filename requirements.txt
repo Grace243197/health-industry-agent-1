@@ -1,5 +1,6 @@
 # 核心依赖
-pypdf>=3.0
+pypdf>=3.0        # PDF 文本提取（inbox/pdfs 入库）
+fpdf2>=2.7        # Markdown 报告导出 PDF（tools/report_pdf.py）
 
 # 可选（当前使用 urllib 标准库，不需要额外安装）
 # requests>=2.28

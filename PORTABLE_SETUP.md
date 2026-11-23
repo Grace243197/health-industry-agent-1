@@ -7,7 +7,8 @@
 ## 1. 环境要求
 
 - Python 3.10 及以上
-- 依赖：`pypdf`（`tools/ingest.py` 解析 `inbox/pdfs/` 下的论文与手册时需要；HTML/文本来源不需要）
+- 依赖：`pypdf`（`tools/ingest.py` 解析 `inbox/pdfs/` 下的论文与手册时需要）、`fpdf2`（导出 PDF 报告时需要）。HTML/文本来源不需要 pypdf。
+- PDF 导出需要中文字体：默认自动找 `C:\Windows\Fonts\simhei.ttf`；找不到时用环境变量指定，例如 `set REPORT_FONT=D:\fonts\NotoSansSC.ttf`。
 - 建议用虚拟环境，避免污染全局 Python：
 
 ```bash
@@ -47,6 +48,23 @@ python tools/kb_search.py "CPAP" --limit 3
 output/261117-v2-final_report.md
 ```
 
+## 2.5 问一句，下载 PDF 报告
+
+```bash
+# 建库：把 PDF 放进 inbox/pdfs/，会议纪要放进 inbox/notes/
+.venv\Scripts\python.exe tools/ingest.py --run-id demo
+
+# 命令行：生成 output/<时间戳>_report.md 与同名 PDF
+.venv\Scripts\python.exe tools/ask_report.py "LANMAO 睡眠记录仪与多导睡眠监测对比"
+
+# 网页窗口：浏览器打开 http://127.0.0.1:8000，输入问题 → 点「下载 PDF 报告」
+.venv\Scripts\python.exe tools/web_ui.py
+```
+
+- 只监听 `127.0.0.1`，同网段其他人访问不到；`/download/` 只放行 `output/` 下的报告文件。
+- 没有 `DASHSCOPE_API_KEY` 时答案退化为"原文片段汇总"，报告里明确标注"未调用模型"。
+- 只生成 PDF 不调模型时加 `--no-llm`；只出 Markdown 时 `ask_report.py --no-pdf`。
+
 ## 3. 目录说明
 
 | 路径 | 内容 |
@@ -56,7 +74,7 @@ output/261117-v2-final_report.md
 | `knowledge_base/sources/` | 原件 `raw.html` + 抽取文本 `extracted.md` |
 | `knowledge_base/cards/` | 每份来源的整理卡 |
 | `knowledge_base/topics/` | 9 个主题页 + 4 个岗位页 + 跨方向综合 |
-| `tools/` | 采集、检索、核验、更新、自检脚本 |
+| `tools/` | 采集、检索、核验、更新、自检脚本；V3 起含 PDF 入库、问答报告（`ask_report.py`）、PDF 排版（`report_pdf.py`）、本地网页窗口（`web_ui.py`） |
 | `runs/261117-v2-final/` | 本次运行的交接记录、核验结果、报告、修复日志 |
 | `output/261117-v2-final_report.md` | 最终报告 |
 | `docs/` | 差距报告、决策记录、变更说明、给 Qwen 的 prompt |

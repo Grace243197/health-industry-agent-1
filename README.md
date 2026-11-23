@@ -2,6 +2,8 @@
 
 > **V2 修复版（2026-11-17）**：完成资料真实性修复、去重、真实采集工具、证据核验、知识库更新和报告生成。self_check.py 全 PASS。详见 `docs/v2-gap-report.md` 和 `docs/v1-changelog.md`。
 >
+> **V3.1（2026-11-23）**：补上"最后一公里" —— 问一句 → 本地检索出带 `[Sxxx]` 引用的答案 → 导出 PDF → 网页里点按钮下载。新增 `tools/ask_report.py`（问答+报告）、`tools/report_pdf.py`（Markdown→PDF，中文字体）、`tools/web_ui.py`（本地网页窗口，仅监听 127.0.0.1）。详见 `docs/v3.1-ask-report-ui-20261123.md`。
+>
 > **V3（2026-11-23）**：打通 PDF 入库 —— `tools/ingest.py` 新增 `ingest_pdfs()`，`inbox/pdfs/` 下的论文/手册现在会真正进入知识库（此前只定义、从未调用）；扫描件自动拒收并记入 `failed`。另加 `tools/probe_search.py` 验证千问联网返回结构，并改用 `.venv` 隔离环境。详见 `docs/v3-env-and-pdf-20261123.md`。
 >
 > **V1 骨架**：搭好流程与目录，支持本地材料 + 联网调研。可通过 `config/project.json` 的 `web_enabled` 控制是否联网。
@@ -91,6 +93,25 @@
 | `tools/supplement_collector.py` | 补充收集：分析缺口 + `--fetch` 调用 fetch_sources |
 | `tools/ingest.py` | 入库：`inbox/notes/*.md` + **`inbox/pdfs/*.pdf`**（V3 起，pypdf 抽文本、扫描件拒收） |
 | `tools/probe_search.py` | 探针：验证千问 `enable_search` 在两条协议下的真实返回结构（需 `DASHSCOPE_API_KEY`） |
+| `tools/ask_report.py` | 问答：问题 → 本地检索证据 → 答案 → `output/<时间戳>_report.md/.pdf` |
+| `tools/report_pdf.py` | 排版：Markdown 报告转 PDF（自动找中文字体，可用 `REPORT_FONT` 指定） |
+| `tools/web_ui.py` | 网页窗口：提问、看答案与证据表、点按钮下载 PDF（标准库，只监听本机） |
+
+## 快速演示：问一句，下载 PDF
+
+```bash
+# 1) 建库（把真实 PDF 放进 inbox/pdfs/ 后）
+.venv\Scripts\python.exe tools/ingest.py --run-id demo
+
+# 2) 命令行版
+.venv\Scripts\python.exe tools/ask_report.py "LANMAO 睡眠记录仪与多导睡眠监测对比"
+
+# 3) 网页窗口版（浏览器打开 http://127.0.0.1:8000）
+.venv\Scripts\python.exe tools/web_ui.py
+```
+
+- 未配置 `DASHSCOPE_API_KEY` 时，答案退化为"原文片段汇总"，报告里会明确写"未调用模型"，不会假装是推理结论。
+- PDF 页眉固定为项目名，正文含结论、证据清单表、逐条溯源与方法限制四节。
 
 ### 搜索替代方案
 1. 首选：固定 URL 清单 + `fetch_sources.py` 直链抓取
