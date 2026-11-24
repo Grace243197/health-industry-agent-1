@@ -37,6 +37,8 @@ generator-agent/reports/
 generator-agent/traces/
 dispatcher-agent/audit/
 dispatcher-agent/traces/
+knowledge-agent/knowledge_base/
+knowledge-agent/traces/
 *_precheck.log
 _*.log
 *_test.log

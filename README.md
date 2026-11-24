@@ -1,5 +1,7 @@
 # general-domain-research-multi-agent-tool（睡眠健康 · 睡眠监测）
 
+> **V6（2026-11-23）**：补上知识库 Agent —— 五个 Agent **全部可运行**。`knowledge-agent/`（8 工具）实现 staging/frozen/archive 两分法、`registry.jsonl` 账本与**人工冻结闸门**：`approved_by` 为空或写成"待定/TODO"一律拒绝，冻结后 `frozen/` 只读。调度已能真实调用知识库。五个 Agent 共 52 个单测全过。详见 `docs/v6-knowledge-agent-20261123.md`。
+>
 > **V5（2026-11-23）**：补上「生成 + 调度」——`generator-agent/`（5 工具，双源强制、证据索引带 A/B/C）、`dispatcher-agent/`（7 工具，subprocess 隔离、审计日志、校验驳回自动回退一次）。四个 Agent 共 32 个单测全过；调度已能真实调用采集并落审计。知识库 Agent 尚未实现，`run_knowledge` 会如实报「入口不存在」。详见 `docs/v5-generator-dispatcher-20261123.md`。
 >
 > **V4（2026-11-23）**：多 Agent 运行时起步 —— `shared-core/` 公共内核 + `tools/sync_core.py` 同步机制 + `research-collector-agent/`（采集，5 工具，free/qwen 双后端）+ `verify-agent/`（校验，4 工具 + 规则预检 + 红队四例）。两者自检与测试均离线通过；`qwen` 后端与模型判定因无密钥**未实测**。详见 `docs/v4-agents-collector-verify-20261123.md`。
@@ -85,7 +87,7 @@
 | 校验 | `verify-agent/` | 4 | 自检通过；规则预检 + 红队四例 4/4 |
 | 生成 | `generator-agent/` | 5 | 自检通过；双源缺失时拒绝生成；证据索引带 A/B/C |
 | 调度 | `dispatcher-agent/` | 7 | 自检通过；真实调用采集成功并落审计；驳回自动回退一次 |
-| 知识库 | — | — | **未实现**，调度会如实报「入口不存在」 |
+| 知识库 | `knowledge-agent/` | 8 | 自检通过；两分法 + 人工冻结闸门；`approved_by` 为空即拒绝 |
 
 公共内核在 `shared-core/`，改完执行 `python tools/sync_core.py`；`--check` 能发现副本被手改漂移。
 
@@ -95,6 +97,8 @@ cd research-collector-agent && python run_cli.py --check
 cd verify-agent && python run_cli.py --check && python run_cli.py --precheck
 cd generator-agent && python run_cli.py --check
 cd dispatcher-agent && python run_cli.py --check
+cd knowledge-agent && python run_cli.py --check
+cd knowledge-agent && python run_cli.py --task "把 SRC007 冻结进基线库，批准人：张三"
 cd dispatcher-agent && python run_cli.py --task "调研成人睡眠监测行业"
 ```
 

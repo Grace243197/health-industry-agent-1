@@ -101,11 +101,15 @@ def _clean(text: str) -> str:
 
 
 def _fill_arguments(arguments: dict, user_text: str) -> dict:
-    """把 $q / $url / $path 占位符替换成用户输入里能取到的值。"""
+    """把 $q / $task / $url / $path / $sid / $approver 占位符替换成输入里的值。"""
     url_match = re.search(r"https?://[^\s，。；]+", user_text)
     url = url_match.group() if url_match else ""
     path_match = re.search(r"[\w\-./]+\.(?:md|txt|json)", user_text)
     path = path_match.group() if path_match else ""
+    sid_match = re.search(r"SRC\d{3}", user_text, re.IGNORECASE)
+    sid = sid_match.group().upper() if sid_match else ""
+    approver_match = re.search(r"批准人\s*[:：]\s*(\S+)", user_text)
+    approver = approver_match.group(1) if approver_match else ""
 
     filled = {}
     for key, value in arguments.items():
@@ -119,6 +123,10 @@ def _fill_arguments(arguments: dict, user_text: str) -> dict:
             filled[key] = url
         elif value == "$path":
             filled[key] = path
+        elif value == "$sid":
+            filled[key] = sid
+        elif value == "$approver":
+            filled[key] = approver
         else:
             filled[key] = value
     return filled

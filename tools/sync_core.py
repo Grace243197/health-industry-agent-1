@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "shared-core"
-CORE_VERSION = "20261123.5"
+CORE_VERSION = "20261123.6"
 
 # shared-core 里哪些文件要分发；不在列表里的（如 README）只留模板
 GENERATED = [

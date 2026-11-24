@@ -30,10 +30,11 @@ OFFLINE_INTRO = (
 
 OFFLINE_RULES = [
     {"pattern": r"采集|调研|搜|抓", "tool": "run_collector", "args": {"task": "$task"}},
-    {"pattern": r"入库|知识库|预处理", "tool": "run_knowledge", "args": {"task": "$task"}},
+    {"pattern": r"入库|知识库|预处理|来源|素材|冻结|归档",
+     "tool": "run_knowledge", "args": {"task": "$task"}},
     {"pattern": r"生成|写报告|对比表|岗位", "tool": "run_generator", "args": {"task": "$task"}},
     {"pattern": r"校验|核对|复核|质疑", "tool": "run_verifier", "args": {"task": "$task"}},
-    {"pattern": r"有哪些|列出|状态", "tool": "list_agents", "args": {}},
+    {"pattern": r"下游|有哪些\s*agent|调度状态", "tool": "list_agents", "args": {}},
 ]
 
 

@@ -3,7 +3,7 @@
 > 本文件记录每一轮**实质改动**：改了什么、为什么改、怎么验证、怎么回滚。
 > 详细过程与实测输出在 `docs/` 下对应文档里，这里只留索引与结论。
 
-当前仓库版本：**v5-generator-dispatcher**（2026-11-23）
+当前仓库版本：**v6-knowledge-agent**（2026-11-23）
 
 ---
 
@@ -17,6 +17,53 @@
 | V3.1 | 2026-11-23 | 问一句 → 带 `[Sxxx]` 出处的答案 → 导出 PDF → 网页点按钮下载 | `docs/v3.1-ask-report-ui-20261123.md` |
 | V4 | 2026-11-23 | 多 Agent 运行时起步：公共内核 + 同步机制 + 采集 Agent + 校验 Agent | `docs/v4-agents-collector-verify-20261123.md` |
 | V5 | 2026-11-23 | 生成 Agent（双源强制 + 证据索引）+ 调度 Agent（subprocess 隔离 + 审计 + 回退一次） | `docs/v5-generator-dispatcher-20261123.md` |
+| V6 | 2026-11-23 | 知识库 Agent：staging/frozen/archive 两分法 + registry 账本 + 人工冻结闸门（五个 Agent 全部可运行） | `docs/v6-knowledge-agent-20261123.md` |
+
+---
+
+## V6（2026-11-23）逐项说明
+
+### 1. 改了什么
+
+| 路径 | 类型 | 内容 |
+|---|---|---|
+| `knowledge-agent/` | 新增 | `agent/knowledge.py`（两分法 + 闸门）、8 个工具、20 个单测 |
+| `shared-core/model.py` | 修改 | 新增 `$sid` / `$approver` 占位符，供离线演示冻结流程 |
+| `dispatcher-agent/agent/agentrc.py` | 修改 | 路由规则收窄：`list_agents` 不再抢"列出…"，来源/素材/冻结归知识库 |
+| `docs/v6-...md`、`CHANGELOG.md`、`README.md`、`.gitignore` | 修改 | 文档与运行产物忽略 |
+
+### 2. 为什么
+
+知识库是证据链的中转仓库，也是老师最看重的"人工闸门"落点。补上它，五个 Agent 才齐，
+`run_knowledge` 不再返回"入口不存在"。
+
+### 3. 怎么验证
+
+```bash
+cd dispatcher-agent && python run_cli.py --check    # 四个下游入口全部"存在"
+cd knowledge-agent && python run_cli.py --check     # 8 个工具；staging/frozen/archive/registry 状态
+cd knowledge-agent && python run_cli.py --task "预处理 research-collector-agent/sources/SRC007.md"
+cd knowledge-agent && python run_cli.py --task "把 SRC007 冻结进基线库，批准人：张三"
+```
+
+实测：SRC007（论文）判 A 并冻结为 v2、approved_by=张三；SRC001（产品手册）判 C 留在 staging；
+调度 `--task "列出所有来源"` 经 `run_knowledge` 返回两条并落审计。五个 Agent 共 52 个单测全过。
+
+### 4. 本轮修掉的四个 bug
+
+1. `self.archive` 属性覆盖了 `archive()` 方法 → 改名 `archive_dir/staging_dir/frozen_dir`。
+2. 来源卡是表格体（`| **来源编号** | SRC001 |`）而解析器只认 `- source_id:` → 双格式兼容，编号与标题不再丢。
+3. 学术论文判成 C（特征词缺"论文/学术/同行评审"）→ 补齐后判 A。
+4. 调度 `list_agents` 抢走"列出所有来源" → 收窄路由规则。
+
+### 5. 边界
+
+- 真实模型仍未接入，判级与生成质量未验证；
+- 四段链路只能分段调，未一次性串通；
+- 人工闸门只在工具层，没有审批界面；
+- `ask_report` / 网页仍走 V3.1 链路。
+
+详见 `docs/v6-knowledge-agent-20261123.md`。
 
 ---
 

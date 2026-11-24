@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTO-GENERATED from shared-core/config.py by tools/sync_core.py — DO NOT EDIT
-# CORE_VERSION: 20261123.5
+# CORE_VERSION: 20261123.6
 """
 config.py · 公共内核配置（由 shared-core 同步生成，请勿手改）
 
